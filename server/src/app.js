@@ -1,16 +1,16 @@
-const express = require("express");
+// app.js
 const http = require("http");
-const { Server } = require("socket.io");
+const express = require("express");
 const cors = require("cors");
-const { handleSocketEvents } = require("./socket");
+const { setupSocket } = require("./sockets");
 
-const startServer = (port) => {
+const startServer = (PORT) => {
   const app = express();
   const server = http.createServer(app);
 
-  const io = new Server(server, {
+  const io = require("socket.io")(server, {
     cors: {
-      origin: "http://localhost:5173", // frontend URL
+      origin: process.env.CORS_ORIGIN || "*",
       methods: ["GET", "POST"]
     }
   });
@@ -18,11 +18,10 @@ const startServer = (port) => {
   app.use(cors());
   app.use(express.json());
 
-  // Handle all socket events
-  handleSocketEvents(io);
+  setupSocket(io); // Attach all socket event listeners
 
-  server.listen(port, () => {
-    console.log(`🚀 Server running on http://localhost:${port}`);
+  server.listen(PORT, () => {
+    console.log(`🚀 Server running on http://localhost:${PORT}`);
   });
 };
 

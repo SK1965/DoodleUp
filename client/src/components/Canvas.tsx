@@ -58,10 +58,11 @@ const Canvas: React.FC<CanvasProps> = ({ roomId }) => {
     ctx.closePath();
 
     if (emit) {
-      socket.emit("drawing", {
+      const msg = socket.emit("drawing", {
         roomId,
         data: { x0, y0, x1, y1, color, size },
       });
+      console.log(msg)
     }
   };
 
@@ -126,17 +127,22 @@ const Canvas: React.FC<CanvasProps> = ({ roomId }) => {
   }, [drawing, color, size]);
 
   useEffect(() => {
-    socket.on("drawing", ({ data }: { data: DrawData }) => {
+    const handleDrawing = async ({ data }: { data: DrawData }) => {
       drawLine(data.x0, data.y0, data.x1, data.y1, data.color, data.size, false);
-    });
+    };
 
-    socket.on("drawing-history", (strokes: DrawData[]) => {
-      strokes.forEach((s) => drawLine(s.x0, s.y0, s.x1, s.y1, s.color, s.size, false));
-    });
+    const handleDrawingHistory = async (strokes: DrawData[]) => {
+      for (const s of strokes) {
+        drawLine(s.x0, s.y0, s.x1, s.y1, s.color, s.size, false);
+      }
+    };
+
+    socket.on("drawing", handleDrawing);
+    socket.on("drawing-history", handleDrawingHistory);
 
     return () => {
-      socket.off("drawing");
-      socket.off("drawing-history");
+      socket.off("drawing", handleDrawing);
+      socket.off("drawing-history", handleDrawingHistory);
     };
   }, []);
 

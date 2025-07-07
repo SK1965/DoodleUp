@@ -7,9 +7,12 @@ const DrawingPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
  console.log
   useEffect(() => {
-    if (id) {
-      socket.emit("join-room",{ roomId:id});
-    }
+    const joinRoom = async () => {
+      if (id) {
+        await socket.emit("join-room", { roomId: id });
+      }
+    };
+    joinRoom();
   }, [id]);
 
   return (
