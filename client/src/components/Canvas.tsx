@@ -1,104 +1,94 @@
-import { useEffect, useRef, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import socket from "../socket";
-
-interface CanvasProps {
-  roomId: string;
-}
-
-interface DrawData {
-  x0: number;
-  y0: number;
-  x1: number;
-  y1: number;
-  color: string;
-  size: number;
-}
+import type { CanvasProps, DrawData, Tool } from "../types/types";
+import { BG_COLOR, drawLine } from "../utils/drawUtils";
+import Toolbar from "./Toolbar";
 
 const Canvas: React.FC<CanvasProps> = ({ roomId }) => {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const ctxRef = useRef<CanvasRenderingContext2D | null>(null);
+  const [cursorStyle, setCursorStyle] = useState("crosshair");
   const [drawing, setDrawing] = useState(false);
-  const [color, setColor] = useState("#000000");
-  const [size, setSize] = useState(2);
+  const [tool, setTool] = useState<Tool>("pen");
+  const [penSize, setPenSize] = useState(5);
+  const [eraserSize, setEraserSize] = useState(20);
+  const [strokeColor, setStrokeColor] = useState("#222222");
   const prev = useRef<{ x: number; y: number } | null>(null);
 
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
-
     canvas.width = window.innerWidth;
     canvas.height = window.innerHeight;
-
     const ctx = canvas.getContext("2d");
     if (ctx) {
       ctx.lineCap = "round";
       ctx.lineJoin = "round";
+      ctx.fillStyle = BG_COLOR;
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
       ctxRef.current = ctx;
     }
   }, []);
 
-  const drawLine = (
-    x0: number,
-    y0: number,
-    x1: number,
-    y1: number,
-    color: string,
-    size: number,
-    emit: boolean = true
-  ) => {
-    const ctx = ctxRef.current;
-    if (!ctx) return;
-
-    ctx.strokeStyle = color;
-    ctx.lineWidth = size;
-    ctx.beginPath();
-    ctx.moveTo(x0, y0);
-    ctx.lineTo(x1, y1);
-    ctx.stroke();
-    ctx.closePath();
-
-    if (emit) {
-      const msg = socket.emit("drawing", {
-        roomId,
-        data: { x0, y0, x1, y1, color, size },
-      });
-      console.log(msg)
+   useEffect(() => {
+    if (tool === "pen") {
+      setCursorStyle("crosshair");
+    } else {
+      const size = eraserSize;
+      const svg = `<svg height="${size}" width="${size}" xmlns="http://www.w3.org/2000/svg"><circle cx="${
+        size / 2
+      }" cy="${size / 2}" r="${
+        size / 2 - 1
+      }" stroke="black" stroke-width="1" fill="white" fill-opacity="0.5"/></svg>`;
+      const cursor = `url('data:image/svg+xml;base64,${btoa(svg)}') ${size / 2} ${size / 2}, auto`;
+      setCursorStyle(cursor);
     }
-  };
+  }, [tool, eraserSize]);
 
-  const getMousePos = (e: MouseEvent | TouchEvent) => {
+  const getPointer = (e: MouseEvent | TouchEvent) => {
     const canvas = canvasRef.current;
     if (!canvas) return { x: 0, y: 0 };
-
-    let clientX = 0, clientY = 0;
+    let x = 0, y = 0;
     if (e instanceof MouseEvent) {
-      clientX = e.clientX;
-      clientY = e.clientY;
+      x = e.clientX;
+      y = e.clientY;
     } else if (e.touches.length > 0) {
-      clientX = e.touches[0].clientX;
-      clientY = e.touches[0].clientY;
+      x = e.touches[0].clientX;
+      y = e.touches[0].clientY;
     }
-
-    return { x: clientX, y: clientY };
+    return { x, y };
   };
 
-  const handleMouseDown = (e: MouseEvent | TouchEvent) => {
+  const handleStart = (e: MouseEvent | TouchEvent) => {
     setDrawing(true);
-    const { x, y } = getMousePos(e);
+    const { x, y } = getPointer(e);
     prev.current = { x, y };
   };
 
-  const handleMouseMove = (e: MouseEvent | TouchEvent) => {
+  const handleMove = (e: MouseEvent | TouchEvent) => {
     if (!drawing) return;
-    const { x, y } = getMousePos(e);
+    const { x, y } = getPointer(e);
     const prevPos = prev.current;
-    if (prevPos) {
-      drawLine(prevPos.x, prevPos.y, x, y, color, size, true);
+    if (prevPos && ctxRef.current) {
+      const mode = tool;
+      const size = tool === "pen" ? penSize : eraserSize;
+      const color = strokeColor;
+      const data: DrawData = {
+        x0: prevPos.x,
+        y0: prevPos.y,
+        x1: x,
+        y1: y,
+        color,
+        size,
+        mode
+      };
+      drawLine(ctxRef.current, data);
+      socket.emit("drawing", { roomId, data });
       prev.current = { x, y };
     }
   };
 
-  const handleMouseUp = () => {
+  const handleEnd = () => {
     setDrawing(false);
     prev.current = null;
   };
@@ -106,59 +96,56 @@ const Canvas: React.FC<CanvasProps> = ({ roomId }) => {
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
-
-    canvas.addEventListener("mousedown", handleMouseDown as EventListener);
-    canvas.addEventListener("mousemove", handleMouseMove as EventListener);
-    window.addEventListener("mouseup", handleMouseUp);
-
-    canvas.addEventListener("touchstart", handleMouseDown as EventListener);
-    canvas.addEventListener("touchmove", handleMouseMove as EventListener);
-    window.addEventListener("touchend", handleMouseUp);
-
+    canvas.addEventListener("mousedown", handleStart as EventListener);
+    canvas.addEventListener("mousemove", handleMove as EventListener);
+    window.addEventListener("mouseup", handleEnd);
+    canvas.addEventListener("touchstart", handleStart as EventListener);
+    canvas.addEventListener("touchmove", handleMove as EventListener);
+    window.addEventListener("touchend", handleEnd);
     return () => {
-      canvas.removeEventListener("mousedown", handleMouseDown as EventListener);
-      canvas.removeEventListener("mousemove", handleMouseMove as EventListener);
-      window.removeEventListener("mouseup", handleMouseUp);
-
-      canvas.removeEventListener("touchstart", handleMouseDown as EventListener);
-      canvas.removeEventListener("touchmove", handleMouseMove as EventListener);
-      window.removeEventListener("touchend", handleMouseUp);
+      canvas.removeEventListener("mousedown", handleStart as EventListener);
+      canvas.removeEventListener("mousemove", handleMove as EventListener);
+      window.removeEventListener("mouseup", handleEnd);
+      canvas.removeEventListener("touchstart", handleStart as EventListener);
+      canvas.removeEventListener("touchmove", handleMove as EventListener);
+      window.removeEventListener("touchend", handleEnd);
     };
-  }, [drawing, color, size]);
+  }, [drawing, tool, penSize, eraserSize, strokeColor]);
 
   useEffect(() => {
-    const handleDrawing = async ({ data }: { data: DrawData }) => {
-      drawLine(data.x0, data.y0, data.x1, data.y1, data.color, data.size, false);
-    };
-
-    const handleDrawingHistory = async (strokes: DrawData[]) => {
-      for (const s of strokes) {
-        drawLine(s.x0, s.y0, s.x1, s.y1, s.color, s.size, false);
-      }
-    };
-
-    socket.on("drawing", handleDrawing);
-    socket.on("drawing-history", handleDrawingHistory);
-
+    socket.on("drawing", ({ data }: { data: DrawData }) => {
+      if (ctxRef.current) drawLine(ctxRef.current, data);
+    });
+    socket.on("drawing-history", (history: DrawData[]) => {
+      history.forEach(data => ctxRef.current && drawLine(ctxRef.current, data));
+    });
     return () => {
-      socket.off("drawing", handleDrawing);
-      socket.off("drawing-history", handleDrawingHistory);
+      socket.off("drawing");
+      socket.off("drawing-history");
     };
   }, []);
 
   return (
     <div>
-      <div className="absolute top-4 left-4 z-10 flex items-center gap-4 bg-white p-2 rounded-md shadow-md">
-        <input type="color" value={color} onChange={(e) => setColor(e.target.value)} />
-        <input
-          type="range"
-          min={1}
-          max={20}
-          value={size}
-          onChange={(e) => setSize(Number(e.target.value))}
-        />
-      </div>
-      <canvas ref={canvasRef} className="w-screen h-screen touch-none" />
+      <Toolbar
+        tool={tool}
+        setTool={setTool}
+        penSize={penSize}
+        setPenSize={setPenSize}
+        eraserSize={eraserSize}
+        setEraserSize={setEraserSize}
+        strokeColor={strokeColor}
+        setStrokeColor={setStrokeColor}
+      />
+      <canvas
+        ref={canvasRef}
+        className="w-screen h-screen touch-none"
+        style={{
+          touchAction: "none",
+          background: BG_COLOR,
+          cursor: cursorStyle,
+        }}
+      />
     </div>
   );
 };

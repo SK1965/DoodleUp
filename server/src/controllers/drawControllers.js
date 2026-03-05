@@ -59,5 +59,15 @@ const drawing = async (socket, { roomId, data }) => {
     console.error("❌ Drawing save error:", err.message);
   }
 };
+const clearRoom = async (socket, { roomId }, io) => {
+  io.to(roomId).emit("clear-canvas");
+  try {
+    const room = await Room.findOne({ roomId });
+    if (!room) return;
+    await Drawing.findOneAndUpdate({ room: room._id }, { strokes: [] });
+  } catch (err) {
+    console.error("❌ Clear room error:", err.message);
+  }
+};
 
-module.exports = { createRoom, joinRoom, drawing };
+module.exports = { createRoom, joinRoom, drawing, clearRoom };
