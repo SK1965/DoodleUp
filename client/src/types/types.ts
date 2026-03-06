@@ -2,7 +2,7 @@ export interface CanvasProps {
   roomId: string;
 }
 
-export type Tool = "pen" | "eraser";
+export type Tool = "pen" | "eraser" | "brush" | "highlighter";
 
 export interface DrawData {
   x0: number;

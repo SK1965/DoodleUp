@@ -73,7 +73,7 @@ const Canvas: React.FC<CanvasProps> = ({ roomId }) => {
     const prevPos = prev.current;
     if (prevPos && ctxRef.current) {
       const mode = tool;
-      const size = tool === "pen" ? penSize : eraserSize;
+      const size = tool === "eraser" ? eraserSize : penSize;
       const color = strokeColor;
       const data: DrawData = {
         x0: prevPos.x,

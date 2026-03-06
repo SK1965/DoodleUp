@@ -1,4 +1,4 @@
-import type { DrawData, Tool } from "../types/types";
+import type { DrawData } from "../types/types";
 
 export const BG_COLOR = "#ffffff";
 
@@ -7,9 +7,28 @@ export function drawLine(
   { x0, y0, x1, y1, color, size, mode }: DrawData
 ) {
   ctx.save();
-  ctx.globalCompositeOperation = mode === "eraser" ? "destination-out" : "source-over";
-  ctx.strokeStyle = mode === "eraser" ? "rgba(0,0,0,1)" : color;
-  ctx.lineWidth = size;
+  
+  if (mode === "eraser") {
+    ctx.globalCompositeOperation = "destination-out";
+    ctx.strokeStyle = "rgba(0,0,0,1)";
+    ctx.lineWidth = size;
+  } else if (mode === "highlighter") {
+    ctx.globalCompositeOperation = "multiply"; // Or source-over with alpha
+    ctx.globalAlpha = 0.4;
+    ctx.strokeStyle = color;
+    ctx.lineWidth = size * 1.5; // Highlighter is naturally wider
+  } else if (mode === "brush") {
+    ctx.globalCompositeOperation = "source-over";
+    ctx.strokeStyle = color;
+    ctx.lineWidth = size;
+    ctx.shadowBlur = size / 2;
+    ctx.shadowColor = color;
+  } else {
+    ctx.globalCompositeOperation = "source-over";
+    ctx.strokeStyle = color;
+    ctx.lineWidth = size;
+  }
+  
   ctx.beginPath();
   ctx.moveTo(x0, y0);
   ctx.lineTo(x1, y1);
