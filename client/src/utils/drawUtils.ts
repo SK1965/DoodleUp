@@ -8,7 +8,7 @@ export function drawLine(
 ) {
   ctx.save();
   
-  if (mode === "eraser") {
+  if (mode === "eraser" || color === BG_COLOR) {
     ctx.globalCompositeOperation = "destination-out";
     ctx.strokeStyle = "rgba(0,0,0,1)";
     ctx.lineWidth = size;
