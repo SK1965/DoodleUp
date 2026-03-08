@@ -112,6 +112,21 @@ const Canvas: React.FC<CanvasProps> = ({ roomId }) => {
     };
   }, [drawing, tool, penSize, eraserSize, strokeColor]);
 
+  const downloadCanvas = () => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const link = document.createElement("a");
+    link.download = `doodleup-${roomId}.png`;
+    link.href = canvas.toDataURL("image/png");
+    link.click();
+  };
+
+  const clearCanvas = () => {
+    if (window.confirm("Are you sure you want to clear the canvas for everyone?")) {
+      socket.emit("clear-room", { roomId });
+    }
+  };
+
   useEffect(() => {
     socket.on("drawing", ({ data }: { data: DrawData }) => {
       if (ctxRef.current) drawLine(ctxRef.current, data);
@@ -119,9 +134,19 @@ const Canvas: React.FC<CanvasProps> = ({ roomId }) => {
     socket.on("drawing-history", (history: DrawData[]) => {
       history.forEach(data => ctxRef.current && drawLine(ctxRef.current, data));
     });
+    socket.on("clear-canvas", () => {
+      const canvas = canvasRef.current;
+      const ctx = ctxRef.current;
+      if (canvas && ctx) {
+        ctx.fillStyle = BG_COLOR;
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+      }
+    });
+
     return () => {
       socket.off("drawing");
       socket.off("drawing-history");
+      socket.off("clear-canvas");
     };
   }, []);
 
@@ -136,6 +161,8 @@ const Canvas: React.FC<CanvasProps> = ({ roomId }) => {
         setEraserSize={setEraserSize}
         strokeColor={strokeColor}
         setStrokeColor={setStrokeColor}
+        onClear={clearCanvas}
+        onDownload={downloadCanvas}
       />
       <canvas
         ref={canvasRef}
