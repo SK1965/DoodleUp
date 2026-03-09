@@ -79,7 +79,7 @@ const Canvas: React.FC<CanvasProps> = ({ roomId }) => {
         y0: prevPos.y,
         x1: x,
         y1: y,
-        color,
+        color: tool === "eraser" ? BG_COLOR : strokeColor,
         size,
         mode
       };
