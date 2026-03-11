@@ -32,18 +32,17 @@ const Canvas: React.FC<CanvasProps> = ({ roomId }) => {
     }
   }, []);
 
-   useEffect(() => {
-    if (tool === "pen") {
-      setCursorStyle("crosshair");
-    } else {
-      const size = eraserSize;
-      const svg = `<svg height="${size}" width="${size}" xmlns="http://www.w3.org/2000/svg"><circle cx="${
-        size / 2
-      }" cy="${size / 2}" r="${
-        size / 2 - 1
-      }" stroke="black" stroke-width="1" fill="white" fill-opacity="0.5"/></svg>`;
-      const cursor = `url('data:image/svg+xml;base64,${btoa(svg)}') ${size / 2} ${size / 2}, auto`;
+  useEffect(() => {
+    if (tool === "eraser") {
+      const size = Math.max(20, eraserSize); // Set min visual size for eraser cursor
+      const svg = `<svg width="${size}" height="${size}" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <rect x="3" y="10" width="12" height="6" rx="2" transform="rotate(-45 3 10)" fill="#ffb6c1" stroke="#333" stroke-width="1.5"/>
+        <rect x="12" y="15" width="6" height="2.2" rx="1" transform="rotate(-45 12 15)" fill="#eee" />
+      </svg>`;
+      const cursor = `url('data:image/svg+xml;base64,${window.btoa(svg)}') 0 ${size}, auto`;
       setCursorStyle(cursor);
+    } else {
+      setCursorStyle("crosshair");
     }
   }, [tool, eraserSize]);
 
