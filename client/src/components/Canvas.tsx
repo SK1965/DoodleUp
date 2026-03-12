@@ -3,6 +3,7 @@ import socket from "../socket";
 import type { CanvasProps, DrawData, Tool } from "../types/types";
 import { BG_COLOR, drawLine } from "../utils/drawUtils";
 import Toolbar from "./Toolbar";
+import Toast from "./Toast";
 
 const Canvas: React.FC<CanvasProps> = ({ roomId }) => {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
@@ -13,6 +14,7 @@ const Canvas: React.FC<CanvasProps> = ({ roomId }) => {
   const [penSize, setPenSize] = useState(5);
   const [eraserSize, setEraserSize] = useState(20);
   const [strokeColor, setStrokeColor] = useState("#222222");
+  const [toastMsg, setToastMsg] = useState<string | null>(null);
   const prev = useRef<{ x: number; y: number } | null>(null);
 
   useEffect(() => {
@@ -119,6 +121,7 @@ const Canvas: React.FC<CanvasProps> = ({ roomId }) => {
     link.download = `doodleup-${roomId}.png`;
     link.href = canvas.toDataURL("image/png");
     link.click();
+    setToastMsg("Image downloaded successfully!");
   };
 
   const clearCanvas = () => {
@@ -141,14 +144,20 @@ const Canvas: React.FC<CanvasProps> = ({ roomId }) => {
         ctx.fillStyle = BG_COLOR;
         ctx.fillRect(0, 0, canvas.width, canvas.height);
       }
+      setToastMsg("Canvas cleared by a participant.");
+    });
+    
+    socket.on("room-joined", () => {
+      setToastMsg("Connected to room: " + roomId);
     });
 
     return () => {
       socket.off("drawing");
       socket.off("drawing-history");
       socket.off("clear-canvas");
+      socket.off("room-joined");
     };
-  }, []);
+  }, [roomId]);
 
   return (
     <div>
@@ -173,6 +182,7 @@ const Canvas: React.FC<CanvasProps> = ({ roomId }) => {
           cursor: cursorStyle,
         }}
       />
+      {toastMsg && <Toast message={toastMsg} onClose={() => setToastMsg(null)} />}
     </div>
   );
 };
