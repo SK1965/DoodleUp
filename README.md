@@ -12,9 +12,11 @@
 - **Real-Time Synchronization**: Instantly see what others are drawing
 - **No Sign-Up Required**: Create a room, share the link, and start drawing
 - **Premium Interface**: Aesthetic glassmorphism UI with smooth animations
-- **Rich Toolkit**: Pen, eraser, custom color picker, and stroke size adjustments
+- **Rich Toolkit**: Pen, brush, highlighter, and scalable custom eraser tools
+- **Advanced Controls**: Dynamic stroke size adjustments and custom color picker
 - **Action Notifications**: Activity alerts when users join or canvases are cleared
 - **Export Capabilities**: Download the shared canvas as a high-quality PNG
+- **Cost-Optimized Backend**: Mongoose schema specifically crafted without repetitive generic identifiers to save huge amounts of MongoDB Atlas costs on drawn strokes.
 
 ## 🛠 Tech Stack
 - **Frontend**: React, Vite, Tailwind CSS
