@@ -17,6 +17,7 @@
 - **Action Notifications**: Activity alerts when users join or canvases are cleared
 - **Export Capabilities**: Download the shared canvas as a high-quality PNG
 - **Cost-Optimized Backend**: Mongoose schema specifically crafted without repetitive generic identifiers to save huge amounts of MongoDB Atlas costs on drawn strokes.
+- **Robust History Sync**: Complete payload sanitization ensures accurate eraser colors even on legacy drawings.
 
 ## 🛠 Tech Stack
 - **Frontend**: React, Vite, Tailwind CSS
