@@ -42,4 +42,4 @@
    - In the `server` directory: `npm run dev` (or `node src/app.js`)
    
 5. **Draw away!**
-   Open your browser to the local standard Vite port (e.g., `localhost:5173`) and create a room.
+   Open your browser to the local standard Vite port (e.g., `localhost:5173`) and create a room. Happy drawing!
